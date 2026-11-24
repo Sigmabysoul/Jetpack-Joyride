@@ -115,8 +115,18 @@ clean:
 
 # This special rule tells Make that "all", "clean", and "test" are rules
 # that don't build a file.
-.PHONY: all clean test
+.PHONY: all clean test build-go-wasm build-go-desktop serve-go
 # Tells Make not to delete the .o files after the executable is built
 .PRECIOUS: out/%.o
 # Tells Make not to delete the wasm.o files after the executable is built
 .PRECIOUS: out/%.wasm.o
+
+# Go Ebitengine Build Targets
+build-go-wasm:
+	GOOS=js GOARCH=wasm go build -o web/game.wasm ./cmd/game
+
+build-go-desktop:
+	go build -o bin/jetpack-joyride ./cmd/game
+
+serve-go: build-go-wasm
+	python3 -m http.server 8080 --directory web

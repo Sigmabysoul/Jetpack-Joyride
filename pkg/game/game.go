@@ -28,6 +28,11 @@ func (g *Game) Update() error {
 		return err
 	}
 
+	// Persist difficulty selection whenever transitioning away from Settings
+	if settings, ok := g.activeScene.(*scenes.SettingsScene); ok {
+		g.difficulty = settings.GetDifficulty()
+	}
+
 	switch nextSceneID {
 	case scenes.SceneHome:
 		g.activeScene = scenes.NewHomeScene()
@@ -36,10 +41,6 @@ func (g *Game) Update() error {
 		g.activeScene = scenes.NewSettingsScene(g.difficulty)
 
 	case scenes.SceneGameplay:
-		// Save selected difficulty if switching from settings
-		if settings, ok := g.activeScene.(*scenes.SettingsScene); ok {
-			g.difficulty = settings.GetDifficulty()
-		}
 		g.activeScene = scenes.NewGameplayScene(g.difficulty)
 
 	case scenes.SceneGameOver:
@@ -65,4 +66,28 @@ func (g *Game) Draw(screen *ebiten.Image) {
 // Layout maintains a fixed virtual resolution of 1000x500 scaled to window dimensions.
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return config.ScreenWidth, config.ScreenHeight
+}
+
+// Test helpers
+func (g *Game) SetSceneForTest(s scenes.Scene) {
+	g.activeScene = s
+}
+
+func (g *Game) GetActiveSceneForTest() scenes.Scene {
+	return g.activeScene
+}
+
+func (g *Game) NavigateToSceneForTest(target scenes.SceneID) {
+	if settings, ok := g.activeScene.(*scenes.SettingsScene); ok {
+		g.difficulty = settings.GetDifficulty()
+	}
+
+	switch target {
+	case scenes.SceneHome:
+		g.activeScene = scenes.NewHomeScene()
+	case scenes.SceneGameplay:
+		g.activeScene = scenes.NewGameplayScene(g.difficulty)
+	case scenes.SceneSettings:
+		g.activeScene = scenes.NewSettingsScene(g.difficulty)
+	}
 }

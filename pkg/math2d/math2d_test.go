@@ -79,4 +79,12 @@ func TestPolygonAndSATCollision(t *testing.T) {
 	if !math2d.CheckSATCollision(box1, rotated) {
 		t.Errorf("expected box1 to collide with its rotated self around center")
 	}
+
+	// Rotated box corner gap (proves no AABB false positives)
+	// box at (10, 10) rotated 45 deg reaches X=10+10*sqrt(2)=24.14 on horizontal axis,
+	// but at corner (23, 23) it does NOT intersect the diamond
+	cornerBox := math2d.NewRectangle(math2d.Vector{X: 23, Y: 23}, 2, 2)
+	if math2d.CheckSATCollision(rotated, cornerBox) {
+		t.Errorf("expected rotated diamond to NOT collide with box placed in outer AABB corner gap")
+	}
 }

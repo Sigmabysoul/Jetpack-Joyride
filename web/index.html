@@ -116,11 +116,21 @@
 
     async function run() {
       try {
-        loadingText.textContent = "Compiling WebAssembly...";
-        const result = await WebAssembly.instantiateStreaming(
-          fetch("game.wasm"),
-          go.importObject
-        );
+        loadingText.textContent = "Loading WebAssembly...";
+        let result;
+        if (WebAssembly.instantiateStreaming) {
+          try {
+            result = await WebAssembly.instantiateStreaming(fetch("game.wasm"), go.importObject);
+          } catch (e) {
+            console.warn("instantiateStreaming failed, falling back to arrayBuffer:", e);
+          }
+        }
+        if (!result) {
+          const resp = await fetch("game.wasm");
+          const bytes = await resp.arrayBuffer();
+          result = await WebAssembly.instantiate(bytes, go.importObject);
+        }
+
         loadingOverlay.style.opacity = "0";
         setTimeout(() => loadingOverlay.style.display = "none", 400);
 

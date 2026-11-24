@@ -101,8 +101,16 @@ func (s *SettingsScene) Draw(screen *ebiten.Image) {
 	// Achievements Header & List
 	if labelFont != nil {
 		text.Draw(screen, "ACHIEVEMENTS:", labelFont, 350, 245, color.RGBA{255, 215, 0, 255})
-		for i, ach := range s.Achievements {
-			text.Draw(screen, fmt.Sprintf("• %s", ach), labelFont, 330, 275+i*24, color.White)
+		unlockedMap := GetUnlockedAchievements()
+		for i, ach := range AllAchievements {
+			statusIcon := "[ ]"
+			col := color.RGBA{200, 200, 200, 255}
+			if unlockedMap[ach.ID] {
+				statusIcon = "[✓]"
+				col = color.RGBA{100, 255, 100, 255}
+			}
+			line := fmt.Sprintf("%s %s: %s", statusIcon, ach.Title, ach.Description)
+			text.Draw(screen, line, labelFont, 280, 275+i*24, col)
 		}
 	}
 

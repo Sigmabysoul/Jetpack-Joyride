@@ -12,6 +12,9 @@ type LocalStorage struct {
 }
 
 func GetStorage() Storage {
+	defer func() {
+		_ = recover()
+	}()
 	window := js.Global()
 	if !window.Get("localStorage").Truthy() {
 		return NewMemoryStorage()
@@ -19,13 +22,23 @@ func GetStorage() Storage {
 	return &LocalStorage{storage: window.Get("localStorage")}
 }
 
-func (l *LocalStorage) Save(key string, data []byte) error {
+func (l *LocalStorage) Save(key string, data []byte) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = ErrNotFound
+		}
+	}()
 	b64 := base64.StdEncoding.EncodeToString(data)
 	l.storage.Call("setItem", "jetpack_"+key, b64)
 	return nil
 }
 
-func (l *LocalStorage) Load(key string) ([]byte, error) {
+func (l *LocalStorage) Load(key string) (result []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = ErrNotFound
+		}
+	}()
 	item := l.storage.Call("getItem", "jetpack_"+key)
 	if !item.Truthy() {
 		return nil, ErrNotFound

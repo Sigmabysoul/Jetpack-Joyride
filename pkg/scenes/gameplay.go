@@ -92,6 +92,7 @@ func (g *GameplayScene) Update() (SceneID, error) {
 
 	// Gravity Swap tap behavior
 	if g.isPowerupOn && g.activePowerup == entities.PowerupGravitySwap {
+		thrusting = false // Disable continuous thrust so it does not fight tap-to-swap
 		if inpututil.IsKeyJustPressed(ebiten.KeySpace) ||
 			inpututil.IsKeyJustPressed(ebiten.KeyUp) ||
 			inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
@@ -234,7 +235,9 @@ func (g *GameplayScene) Update() (SceneID, error) {
 	if !hitFatal {
 		for _, l := range g.lasers {
 			if l.IsActive() && math2d.CheckSATCollision(playerBounds, l.Bounds()) {
-				if !g.handlePlayerHit() {
+				if g.handlePlayerHit() {
+					l.State = entities.LaserStateFinished // Disarm beam so it doesn't kill player on next frame
+				} else {
 					hitFatal = true
 					break
 				}
@@ -262,6 +265,8 @@ func (g *GameplayScene) Update() (SceneID, error) {
 		return SceneGameOver, nil
 	}
 
+	CheckAndUnlockAchievements(g.distance, g.coins, g.isPowerupOn && g.activePowerup == entities.PowerupShield, g.isPowerupOn && g.activePowerup == entities.PowerupGravitySwap)
+
 	return SceneNone, nil
 }
 
@@ -276,6 +281,12 @@ func (g *GameplayScene) handlePlayerHit() bool {
 }
 
 func (g *GameplayScene) activatePowerup(pType entities.PowerupType) {
+	// Clean up any lingering previous powerup states
+	g.Player.SetShield(false)
+	if g.Player.IsGravityInverted {
+		g.Player.ToggleGravity()
+	}
+
 	g.isPowerupOn = true
 	g.activePowerup = pType
 
@@ -290,6 +301,32 @@ func (g *GameplayScene) activatePowerup(pType entities.PowerupType) {
 	case entities.PowerupCoinBoost:
 		g.powerupTimer = config.CoinBoostDuration
 	}
+}
+
+// Test helpers
+func (g *GameplayScene) ActivatePowerupForTest(pType entities.PowerupType) {
+	g.activatePowerup(pType)
+}
+
+func (g *GameplayScene) AddLaserForTest(l *entities.Laser) {
+	g.lasers = append(g.lasers, l)
+}
+
+func (g *GameplayScene) IsPowerupActive() bool {
+	return g.isPowerupOn
+}
+
+func (g *GameplayScene) GetDifficulty() config.Difficulty {
+	return g.difficulty
+}
+
+func (g *GameplayScene) SimulateProgressForTest(dist float64, coins int) {
+	g.distance = dist
+	g.coins = coins
+}
+
+func (g *GameplayScene) CheckAchievementsForTest() {
+	CheckAndUnlockAchievements(g.distance, g.coins, g.isPowerupOn && g.activePowerup == entities.PowerupShield, g.isPowerupOn && g.activePowerup == entities.PowerupGravitySwap)
 }
 
 func (g *GameplayScene) spawnZapper() {

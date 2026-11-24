@@ -19,8 +19,13 @@ type Player struct {
 	HasShield         bool
 }
 
-// NewPlayer creates a new player initialized at (x, y).
+// NewPlayer creates a new player initialized at (x, y) with boundary clamping.
 func NewPlayer(x, y float64) *Player {
+	if y < config.GroundY {
+		y = config.GroundY
+	} else if y > config.CeilingY {
+		y = config.CeilingY
+	}
 	return &Player{
 		X:                 x,
 		Y:                 y,

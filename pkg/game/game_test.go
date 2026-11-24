@@ -5,6 +5,7 @@ import (
 
 	"jetpack-joyride/pkg/config"
 	"jetpack-joyride/pkg/game"
+	"jetpack-joyride/pkg/scenes"
 )
 
 func TestGameCoordinatorLayoutAndLifecycle(t *testing.T) {
@@ -22,5 +23,29 @@ func TestGameCoordinatorLayoutAndLifecycle(t *testing.T) {
 	err := g.Update()
 	if err != nil {
 		t.Errorf("expected Update() to succeed, got %v", err)
+	}
+}
+
+func TestDifficultyPersistenceAcrossNavigation(t *testing.T) {
+	g := game.NewGame()
+
+	// Switch to Settings scene
+	g.SetSceneForTest(scenes.NewSettingsScene(config.DifficultyEasy))
+
+	// Cycle difficulty in Settings to Hard
+	settings := g.GetActiveSceneForTest().(*scenes.SettingsScene)
+	settings.CycleDifficulty() // Medium
+	settings.CycleDifficulty() // Hard
+
+	// Simulate navigating back to Home
+	g.NavigateToSceneForTest(scenes.SceneHome)
+
+	// Now start GamePlay from Home
+	g.NavigateToSceneForTest(scenes.SceneGameplay)
+
+	// Verify the difficulty of GameplayScene is Hard, NOT Easy!
+	gp := g.GetActiveSceneForTest().(*scenes.GameplayScene)
+	if gp.GetDifficulty() != config.DifficultyHard {
+		t.Errorf("expected difficulty to persist as Hard, got %v", gp.GetDifficulty())
 	}
 }

@@ -34,28 +34,16 @@ CC = clang
 # -g adds filenames and line numbers to the executable for useful stack traces
 # -fno-omit-frame-pointer allows stack traces to be generated
 #   (take CS 24 for a full explanation)
-CFLAGS += -Iinclude $(shell sdl2-config --cflags) -Wall -g -fno-omit-frame-pointer
+CFLAGS += -Iinclude -Wall -g -fno-omit-frame-pointer
 
 # Emscripten compilation section
-# Flags to pass to emcc:
-# -s EXIT_RUNTIME=1 shuts the program down properly
-# -s ALLOW_MEMORY_GROWTH=1 allows for dynamic memory usage
-# -s INITIAL_MEMORY sets the initial amount of memory
-# -s USE_SDL=2 ports the sdl library.
-# Other SDL ports are also included, like image and mixer
-# -s ASSERTIONS=1 enables runtime checks for allocation errors
-# -O2 specifies to compile the code with full optimizations. When debugging, you can change to O0 to step through code
-# -g enables DWARF support, for debugging purposes
-# -gsource-map --source-map-base http://localhost:8000/bin/ creates a source map from the C file for debugging
 EMCC = emcc
-EMCC_FLAGS = -s EXIT_RUNTIME=1 -s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=655360000 -s USE_SDL=2 -s USE_SDL_GFX=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s ASSERTIONS=1 -O2 -g -gsource-map --use-preload-plugins --preload-file assets --source-map-base http://localhost:8000/bin/ -s FORCE_FILESYSTEM=1 -sEXPORTED_FUNCTIONS='["_main"]' -sEXPORTED_RUNTIME_METHODS='["ccall"]' -lidbfs.js
+EMCC_SDL_FLAGS = -s USE_SDL=2 -s USE_SDL_GFX=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2
+EMCC_FLAGS = -s EXIT_RUNTIME=1 -s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=655360000 $(EMCC_SDL_FLAGS) -s ASSERTIONS=1 -O2 -g -gsource-map --use-preload-plugins --preload-file assets --source-map-base http://localhost:8000/bin/ -s FORCE_FILESYSTEM=1 -sEXPORTED_FUNCTIONS='["_main"]' -sEXPORTED_RUNTIME_METHODS='["ccall"]' -lidbfs.js
 
 # Compiler flag that links the program with the math library
 LIB_MATH = -lm
-# Compiler flags that link the program with the math library
-# Note that $(...) substitutes a variable's value, so this line is equivalent to
-# LIBS = -lm
-LIBS = $(LIB_MATH) $(shell sdl2-config --libs)
+LIBS = $(LIB_MATH) $(shell sdl2-config --libs 2>/dev/null)
 
 # List of compiled .o files corresponding to STUDENT_LIBS, e.g. "out/vector.o".
 # Don't worry about the syntax; it's just adding "out/" to the start
@@ -93,15 +81,15 @@ out/%.o: demo/%.c # or "demo"
 # Emscripten compilation flags
 # This is very similar to the above compilation, except for emscripten
 out/%.wasm.o: library/%.c # source file may be found in "library"
-	$(EMCC) -c $(CFLAGS) $^ -o $@
+	$(EMCC) -c $(CFLAGS) $(EMCC_SDL_FLAGS) $^ -o $@
 out/%.wasm.o: demo/%.c # or "demo"
-	$(EMCC) -c $(CFLAGS) $^ -o $@
+	$(EMCC) -c $(CFLAGS) $(EMCC_SDL_FLAGS) $^ -o $@
 
 # Builds bin/%.html by linking the necessary .wasm.o files.
 # Unlike the out/%.wasm.o rule, this uses the LIBS flags and omits the -c flag,
 # since it is building a full executable. Also notice it uses our EMCC_FLAGS
 bin/game.html: $(GAME_OBJS) $(WASM_STUDENT_OBJS)
-	$(EMCC) $(EMCC_FLAGS) $(CFLAGS) $(LIBS) $^ -o $@
+	$(EMCC) $(EMCC_FLAGS) $(CFLAGS) $(LIB_MATH) $^ -o $@
 
 # Builds the test suite executables from the corresponding test .o file
 # and the library .o files. The only difference from the demo build command

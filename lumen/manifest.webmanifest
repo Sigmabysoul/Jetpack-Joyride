@@ -1,0 +1,13 @@
+{
+  "name": "lumen",
+  "short_name": "lumen",
+  "description": "A calm one-touch game. Let go and drift to the next light.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#23305e",
+  "theme_color": "#23305e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
